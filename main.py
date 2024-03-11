@@ -11,15 +11,18 @@ def startDownload():
     download_thread.start()
 
 # Quality options
-quality = ["720p", "480p", "360p", "240p", "144p"]
+quality_choice = ["1080", "720p", "480p", "360p", "240p", "144p"]
 
+def choice(event):
+    global quality
+    quality = resolution.get()
 
 # Download the video
 def downloadVideo():
     try:
         url = link.get()
         yt = pt.YouTube(url, on_progress_callback=on_progress)
-        video = yt.streams.filter(progressive=True, file_extension="mp4", res=quality).first()
+        video = yt.streams.filter(file_extension="mp4", res=quality).first()
         title.configure(text=yt.title)
         video.download(os.getcwd())
     except Exception as e:
@@ -38,6 +41,9 @@ def on_progress(stream, chunk, bytes_remaining):
     progress_bar.set(float(percentage_of_completion) / 100)
     if percentage_of_completion == 100:
         progress_bar.configure(progress_color="green")
+        finished.configure(text="")
+    else:
+        progress_bar.configure(progress_color="blue")
 
 
 # Light/Dark mode:
@@ -77,7 +83,7 @@ link = customtkinter.CTkEntry(app, width=350, height=40, textvariable=url_var)
 link.grid(row=2, column=0, padx=0, pady=10)
 
 # Quality combobox
-resolution = customtkinter.CTkComboBox(app, width=110, height=40, values=quality, state="readonly")
+resolution = customtkinter.CTkComboBox(app, width=110, height=40, values=quality_choice, state="readonly", command=choice)
 resolution.grid(row=2, column=0, padx=(0,70), pady=0, sticky="e")
 
 # Download button
