@@ -3,6 +3,13 @@ import os
 import tkinter as tk
 import customtkinter
 import threading
+from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
+import re
+
+#TODO add an icon to the app
+#TODO try and fix some videos that does not have stream
+#TODO make it so that the user can choose the download location
+#TODO add an option to download only the audio
 
 def startDownload():
     # Create a new thread for the download operation
@@ -21,17 +28,43 @@ def choice(event):
 def downloadVideo():
     try:
         url = link.get()
-        yt = pt.YouTube(url, on_progress_callback=on_progress)
-        quality_index = quality_choice.index(quality)
-        for i in range(quality_index, len(quality_choice)):
-            video = yt.streams.filter(file_extension="mp4", res=quality_choice[i]).first()
-            if video:
-                break
-        title.configure(text=yt.title)
-        video.download(os.getcwd())
+        if 'playlist' in url:
+            for video in pt.Playlist(url).video_urls:
+                download_video(video)
+        else:
+            download_video(url)
     except Exception as e:
         finished.configure(text="An error occurred", text_color="red")
         print(e)
+
+def download_video(url):
+    yt = pt.YouTube(url, on_progress_callback=on_progress)
+    quality_index = quality_choice.index(quality)
+    for i in range(quality_index, len(quality_choice)):
+        video_stream = yt.streams.filter(mime_type="video/mp4", res=quality_choice[i]).first()
+        audio_stream = yt.streams.filter(mime_type="audio/webm").first()
+        if video_stream:
+            break
+    title.configure(text=yt.title)
+    video_filename = re.sub(r"[\/:*?\"<>|]", "", yt.title)  # Remove invalid characters
+
+    progress_bar.set(0)
+    percent.configure(text="0%")
+    progress_bar.configure(progress_color="blue")
+
+    video_stream.download(os.getcwd(), filename="video.mp4")
+    audio_stream.download(os.getcwd(), filename="audio.webm")
+    video_clip = VideoFileClip("video.mp4")
+    audio_clip = AudioFileClip("audio.webm")
+    final_clip = video_clip.set_audio(audio_clip)
+    final_clip.write_videofile(f"{video_filename}.mp4")
+    # Close the clips
+    video_clip.close()
+    audio_clip.close()
+    final_clip.close()
+    # Delete the temporary files
+    os.remove("audio.webm")
+    os.remove("video.mp4")
 
 def on_progress(stream, chunk, bytes_remaining):
     total_size = stream.filesize
