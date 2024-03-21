@@ -10,16 +10,25 @@ def startDownload():
     # Start the new thread
     download_thread.start()
 
+# Quality options
+quality_choice = ["1080p", "720p", "480p", "360p", "240p", "144p"]
+
+def choice(event):
+    global quality
+    quality = resolution.get()
+
+# Download the video
 def downloadVideo():
     try:
         url = link.get()
         yt = pt.YouTube(url, on_progress_callback=on_progress)
-        video = yt.streams.filter(progressive=True, file_extension="mp4").order_by("resolution").desc().first()
-
-        title.configure(text=yt.title, text_color="white")
-        finished.configure(text="")
+        quality_index = quality_choice.index(quality)
+        for i in range(quality_index, len(quality_choice)):
+            video = yt.streams.filter(file_extension="mp4", res=quality_choice[i]).first()
+            if video:
+                break
+        title.configure(text=yt.title)
         video.download(os.getcwd())
-        finished.configure(text="Finished downloading", text_color="green")
     except Exception as e:
         finished.configure(text="An error occurred", text_color="red")
         print(e)
@@ -36,6 +45,9 @@ def on_progress(stream, chunk, bytes_remaining):
     progress_bar.set(float(percentage_of_completion) / 100)
     if percentage_of_completion == 100:
         progress_bar.configure(progress_color="green")
+        finished.configure(text="")
+    else:
+        progress_bar.configure(progress_color="blue")
 
 
 # Light/Dark mode:
@@ -53,11 +65,10 @@ app = customtkinter.CTk()
 dark_icon = tk.PhotoImage(file="assets/light.png")
 light_icon = tk.PhotoImage(file="assets/dark.png")
 
+# Main window settings
 app.title("YouTube Downloader")
 app.geometry("720x480")
-
-# app.resizable(False, False)
-customtkinter.set_appearance_mode("System")
+app.resizable(False, False)
 app.grid_columnconfigure(0, weight=1)
 
 # Title
@@ -68,16 +79,16 @@ title.grid(row=1, column=0, padx=10, pady=10)
 mode = customtkinter.CTkButton(app, width=1, image="", text="", fg_color= "transparent", command=theme)
 mode.grid(row=1, column=0, padx=10, pady=1, sticky="e")
 
-# Light/Dark mode icon
-if customtkinter.get_appearance_mode() == "Light":
-    mode.configure(image=light_icon)
-else:
-    mode.configure(image=dark_icon)
-
+theme()
+    
 # Link input
 url_var = tk.StringVar()
 link = customtkinter.CTkEntry(app, width=350, height=40, textvariable=url_var)
-link.grid(row=2, column=0, padx=10, pady=10)
+link.grid(row=2, column=0, padx=0, pady=10)
+
+# Quality combobox
+resolution = customtkinter.CTkComboBox(app, width=110, height=40, values=quality_choice, state="readonly", command=choice)
+resolution.grid(row=2, column=0, padx=(0,70), pady=0, sticky="e")
 
 # Download button
 download = customtkinter.CTkButton(app, text="Download", command=startDownload)
@@ -87,7 +98,7 @@ download.grid(row=3, column=0, padx=20, pady=20)
 percent = customtkinter.CTkLabel(app, text="0%")
 percent.grid(row=4, column=0, padx=10, pady=10)
 
-progress_bar = customtkinter.CTkProgressBar(app, width=350)
+progress_bar = customtkinter.CTkProgressBar(app, width=350, progress_color="blue")
 progress_bar.set(0)
 progress_bar.grid(row=5, column=0, padx=10, pady=10)
 
