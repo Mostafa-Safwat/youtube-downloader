@@ -5,6 +5,7 @@ import customtkinter
 import threading
 from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
 import re
+from PIL import Image, ImageTk
 
 #TODO add an icon to the app
 #TODO try and fix some videos that does not have stream
@@ -95,6 +96,7 @@ def theme():
 # Create the main window
 app = customtkinter.CTk()
 
+
 dark_icon = tk.PhotoImage(file="assets/light.png")
 light_icon = tk.PhotoImage(file="assets/dark.png")
 
@@ -103,6 +105,8 @@ app.title("YouTube Downloader")
 app.geometry("720x480")
 app.resizable(False, False)
 app.grid_columnconfigure(0, weight=1)
+
+app.iconbitmap('youtube.png')
 
 # Title
 title = customtkinter.CTkLabel(app, text="Insert a youtube link")
