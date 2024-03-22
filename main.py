@@ -3,14 +3,11 @@ import os
 import tkinter as tk
 import customtkinter
 import threading
-from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
+from moviepy.editor import VideoFileClip, AudioFileClip
 import re
-from PIL import Image, ImageTk
 
-#TODO add an icon to the app
-#TODO try and fix some videos that does not have stream
-#TODO make it so that the user can choose the download location
 #TODO add an option to download only the audio
+#TODO make a folder with the name of the playlist downloaded
 
 def startDownload():
     # Create a new thread for the download operation
@@ -43,7 +40,7 @@ def download_video(url):
     quality_index = quality_choice.index(quality)
     for i in range(quality_index, len(quality_choice)):
         video_stream = yt.streams.filter(mime_type="video/mp4", res=quality_choice[i]).first()
-        audio_stream = yt.streams.filter(mime_type="audio/webm").first()
+        audio_stream = yt.streams.filter(type="audio").first()
         if video_stream:
             break
     title.configure(text=yt.title)
@@ -53,19 +50,19 @@ def download_video(url):
     percent.configure(text="0%")
     progress_bar.configure(progress_color="blue")
 
-    video_stream.download(os.getcwd(), filename="video.mp4")
-    audio_stream.download(os.getcwd(), filename="audio.webm")
-    video_clip = VideoFileClip("video.mp4")
-    audio_clip = AudioFileClip("audio.webm")
+    video_stream.download(loc, filename="video.mp4")
+    audio_stream.download(loc, filename="audio.webm")
+    video_clip = VideoFileClip(os.path.join(loc, "video.mp4"))
+    audio_clip = AudioFileClip(os.path.join(loc, "audio.webm"))
     final_clip = video_clip.set_audio(audio_clip)
-    final_clip.write_videofile(f"{video_filename}.mp4")
+    final_clip.write_videofile(os.path.join(loc, f"{video_filename}.mp4"))
     # Close the clips
     video_clip.close()
     audio_clip.close()
     final_clip.close()
     # Delete the temporary files
-    os.remove("audio.webm")
-    os.remove("video.mp4")
+    os.remove(os.path.join(loc, "audio.webm"))
+    os.remove(os.path.join(loc, "video.mp4"))
 
 def on_progress(stream, chunk, bytes_remaining):
     total_size = stream.filesize
@@ -93,6 +90,15 @@ def theme():
         customtkinter.set_appearance_mode("light")
         mode.configure(image=light_icon)
 
+def chooseLocation():
+    global loc
+    try:
+        loc = tk.filedialog.askdirectory()
+    except:
+        print("Target location not found")
+        print("Getting current location...")
+        loc = os.getcwd()
+
 # Create the main window
 app = customtkinter.CTk()
 
@@ -106,7 +112,7 @@ app.geometry("720x480")
 app.resizable(False, False)
 app.grid_columnconfigure(0, weight=1)
 
-app.iconbitmap('youtube.png')
+app.iconbitmap('assets/icon.ico')
 
 # Title
 title = customtkinter.CTkLabel(app, text="Insert a youtube link")
@@ -126,6 +132,10 @@ link.grid(row=2, column=0, padx=0, pady=10)
 # Quality combobox
 resolution = customtkinter.CTkComboBox(app, width=110, height=40, values=quality_choice, state="readonly", command=choice)
 resolution.grid(row=2, column=0, padx=(0,70), pady=0, sticky="e")
+
+# Location input
+location = customtkinter.CTkButton(app, width=110, height=40, text="Choose location", command=chooseLocation)
+location.grid(row=2, column=0, padx=(70,0), pady=0, sticky="w")
 
 # Download button
 download = customtkinter.CTkButton(app, text="Download", command=startDownload)
