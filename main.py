@@ -52,20 +52,33 @@ def download_video(url):
     percent.configure(text="0%")
     progress_bar.configure(progress_color="blue")
 
-    video_stream.download(loc, filename="temp_video.mp4")
-    audio_stream.download(loc, filename="temp_audio.webm")
+    if check_audio == "on":
+        # Download only the audio
+        audio_stream.download(loc, filename="temp_audio.webm")
 
-    # Use ffmpeg to merge the video and audio
-    subprocess.call([
-        'ffmpeg', '-i', os.path.join(loc, "temp_video.mp4"),
-        '-i', os.path.join(loc, "temp_audio.webm"),
-        '-c:v', 'copy', '-c:a', 'aac', '-strict', 'experimental',
-        os.path.join(loc, f"{video_filename}.mp4")
-    ])
+        # Convert the audio to mp3
+        subprocess.run([
+            'ffmpeg', '-i', os.path.join(loc, "temp_audio.webm"),
+            os.path.join(loc, f"{video_filename}.mp3")
+        ], check=True)
 
-    # Delete the temporary files
-    os.remove(os.path.join(loc, "temp_audio.webm"))
-    os.remove(os.path.join(loc, "temp_video.mp4"))
+        # Delete the temporary audio file
+        os.remove(os.path.join(loc, "temp_audio.webm"))
+    else:
+        # Download both the video and the audio
+        video_stream.download(loc, filename="temp_video.mp4")
+        audio_stream.download(loc, filename="temp_audio.webm")
+
+        # Merge the audio and video
+        subprocess.run([
+            'ffmpeg', '-i', os.path.join(loc, "temp_video.mp4"),
+            '-i', os.path.join(loc, "temp_audio.webm"),
+            '-c', 'copy', os.path.join(loc, f"{video_filename}.mp4")
+        ], check=True)
+
+        # Delete the temporary files
+        os.remove(os.path.join(loc, "temp_audio.webm"))
+        os.remove(os.path.join(loc, "temp_video.mp4"))
 
 def on_progress(stream, chunk, bytes_remaining):
     total_size = stream.filesize
@@ -96,13 +109,28 @@ def theme():
 def chooseLocation():
     global loc
     loc = tk.filedialog.askdirectory()
+    
+    max_length = 13
+    if len(loc) > max_length:
+        display_text = loc[0:max_length] + '...'
+    else:
+        display_text = loc
+    location.configure(text=display_text)
+    location.configure(fg_color = "green")
+
     # If the user didn't choose a directory, use the current directory
     if not loc:
         loc = os.getcwd()
 
+def checkbox_event():
+    global check_audio
+    check_audio = audio_only.get()
+
 # Create the main window
 app = customtkinter.CTk()
 
+# Define check_audio at the start of your script
+check_audio = tk.StringVar()
 
 dark_icon = tk.PhotoImage(file="assets/light.png")
 light_icon = tk.PhotoImage(file="assets/dark.png")
@@ -141,6 +169,10 @@ location.grid(row=2, column=0, padx=(70,0), pady=0, sticky="w")
 # Download button
 download = customtkinter.CTkButton(app, text="Download", command=startDownload)
 download.grid(row=3, column=0, padx=20, pady=20)
+
+# Audio only checkbox
+audio_only = customtkinter.CTkCheckBox(app, text="Audio only", command=checkbox_event, variable=check_audio, onvalue="on", offvalue="off")
+audio_only.grid(row=3, column=0, padx=(270,0), pady=0)
 
 # Progress bar
 percent = customtkinter.CTkLabel(app, text="0%")
