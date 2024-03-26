@@ -6,8 +6,6 @@ import threading
 import subprocess
 import re
 
-#TODO make a folder with the name of the playlist downloaded
-
 def startDownload():
     # Create a new thread for the download operation
     download_thread = threading.Thread(target=downloadVideo)
@@ -29,7 +27,6 @@ def downloadVideo():
     global loc
     global playlist_loc
     try:
-        print(loc)
         url = link.get()
         if 'playlist' in url:
             playlist_title = pt.Playlist(url).title
@@ -115,7 +112,7 @@ def theme():
 def chooseLocation():
     global loc
     global playlist_loc
-    
+
     loc = tk.filedialog.askdirectory()
 
     # If the user didn't choose a directory, use the current directory
