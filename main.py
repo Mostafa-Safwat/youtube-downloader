@@ -3,7 +3,7 @@ import os
 import tkinter as tk
 import customtkinter
 import threading
-from moviepy.editor import VideoFileClip, AudioFileClip
+import subprocess
 import re
 
 #TODO add an option to download only the audio
@@ -17,6 +17,8 @@ def startDownload():
 
 # Quality options
 quality_choice = ["1080p", "720p", "480p", "360p", "240p", "144p"]
+
+loc = os.getcwd()
 
 def choice(event):
     global quality
@@ -50,19 +52,20 @@ def download_video(url):
     percent.configure(text="0%")
     progress_bar.configure(progress_color="blue")
 
-    video_stream.download(loc, filename="video.mp4")
-    audio_stream.download(loc, filename="audio.webm")
-    video_clip = VideoFileClip(os.path.join(loc, "video.mp4"))
-    audio_clip = AudioFileClip(os.path.join(loc, "audio.webm"))
-    final_clip = video_clip.set_audio(audio_clip)
-    final_clip.write_videofile(os.path.join(loc, f"{video_filename}.mp4"))
-    # Close the clips
-    video_clip.close()
-    audio_clip.close()
-    final_clip.close()
+    video_stream.download(loc, filename="temp_video.mp4")
+    audio_stream.download(loc, filename="temp_audio.webm")
+
+    # Use ffmpeg to merge the video and audio
+    subprocess.call([
+        'ffmpeg', '-i', os.path.join(loc, "temp_video.mp4"),
+        '-i', os.path.join(loc, "temp_audio.webm"),
+        '-c:v', 'copy', '-c:a', 'aac', '-strict', 'experimental',
+        os.path.join(loc, f"{video_filename}.mp4")
+    ])
+
     # Delete the temporary files
-    os.remove(os.path.join(loc, "audio.webm"))
-    os.remove(os.path.join(loc, "video.mp4"))
+    os.remove(os.path.join(loc, "temp_audio.webm"))
+    os.remove(os.path.join(loc, "temp_video.mp4"))
 
 def on_progress(stream, chunk, bytes_remaining):
     total_size = stream.filesize
@@ -92,11 +95,9 @@ def theme():
 
 def chooseLocation():
     global loc
-    try:
-        loc = tk.filedialog.askdirectory()
-    except:
-        print("Target location not found")
-        print("Getting current location...")
+    loc = tk.filedialog.askdirectory()
+    # If the user didn't choose a directory, use the current directory
+    if not loc:
         loc = os.getcwd()
 
 # Create the main window
