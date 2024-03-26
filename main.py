@@ -6,6 +6,8 @@ import threading
 import subprocess
 import re
 
+ffmpeg_path = os.path.join(os.path.dirname(__file__), 'bin', 'ffmpeg')
+
 def startDownload():
     # Create a new thread for the download operation
     download_thread = threading.Thread(target=downloadVideo)
@@ -41,6 +43,13 @@ def downloadVideo():
         print(e)
 
 def download_video(url, download_location):
+    global ffmpeg_path
+    global startupinfo
+
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    startupinfo.wShowWindow = subprocess.SW_HIDE
+
     yt = pt.YouTube(url, on_progress_callback=on_progress)
     quality_index = quality_choice.index(quality)
     for i in range(quality_index, len(quality_choice)):
@@ -61,9 +70,9 @@ def download_video(url, download_location):
 
         # Convert the audio to mp3
         subprocess.run([
-            'ffmpeg', '-i', os.path.join(download_location, "temp_audio.webm"),
+            ffmpeg_path, '-i', os.path.join(download_location, "temp_audio.webm"),
             os.path.join(download_location, f"{video_filename}.mp3")
-        ], check=True)
+        ], stdout=subprocess.DEVNULL, startupinfo=startupinfo, check=True, )
 
         # Delete the temporary audio file
         os.remove(os.path.join(download_location, "temp_audio.webm"))
@@ -74,10 +83,10 @@ def download_video(url, download_location):
 
         # Merge the audio and video
         subprocess.run([
-            'ffmpeg', '-i', os.path.join(download_location, "temp_video.mp4"),
+            ffmpeg_path, '-i', os.path.join(download_location, "temp_video.mp4"),
             '-i', os.path.join(download_location, "temp_audio.webm"),
             '-c', 'copy', os.path.join(download_location, f"{video_filename}.mp4")
-        ], check=True)
+        ], stdout=subprocess.DEVNULL, startupinfo=startupinfo, check=True)
 
         # Delete the temporary files
         os.remove(os.path.join(download_location, "temp_audio.webm"))

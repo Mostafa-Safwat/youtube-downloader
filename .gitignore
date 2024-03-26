@@ -2,3 +2,6 @@
 *.webm
 *.mp3
 venv/
+bin/
+build
+dist
