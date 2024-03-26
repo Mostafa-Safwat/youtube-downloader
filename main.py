@@ -6,7 +6,6 @@ import threading
 import subprocess
 import re
 
-#TODO add an option to download only the audio
 #TODO make a folder with the name of the playlist downloaded
 
 def startDownload():
@@ -19,6 +18,7 @@ def startDownload():
 quality_choice = ["1080p", "720p", "480p", "360p", "240p", "144p"]
 
 loc = os.getcwd()
+playlist_loc = loc
 
 def choice(event):
     global quality
@@ -26,18 +26,24 @@ def choice(event):
 
 # Download the video
 def downloadVideo():
+    global loc
+    global playlist_loc
     try:
+        print(loc)
         url = link.get()
         if 'playlist' in url:
+            playlist_title = pt.Playlist(url).title
+            os.makedirs(os.path.join(loc, playlist_title))
+            playlist_loc = os.path.join(loc, playlist_title)
             for video in pt.Playlist(url).video_urls:
-                download_video(video)
+                download_video(video, playlist_loc)
         else:
-            download_video(url)
+            download_video(url, loc)
     except Exception as e:
         finished.configure(text="An error occurred", text_color="red")
         print(e)
 
-def download_video(url):
+def download_video(url, download_location):
     yt = pt.YouTube(url, on_progress_callback=on_progress)
     quality_index = quality_choice.index(quality)
     for i in range(quality_index, len(quality_choice)):
@@ -54,31 +60,31 @@ def download_video(url):
 
     if check_audio == "on":
         # Download only the audio
-        audio_stream.download(loc, filename="temp_audio.webm")
+        audio_stream.download(download_location, filename="temp_audio.webm")
 
         # Convert the audio to mp3
         subprocess.run([
-            'ffmpeg', '-i', os.path.join(loc, "temp_audio.webm"),
-            os.path.join(loc, f"{video_filename}.mp3")
+            'ffmpeg', '-i', os.path.join(download_location, "temp_audio.webm"),
+            os.path.join(download_location, f"{video_filename}.mp3")
         ], check=True)
 
         # Delete the temporary audio file
-        os.remove(os.path.join(loc, "temp_audio.webm"))
+        os.remove(os.path.join(download_location, "temp_audio.webm"))
     else:
         # Download both the video and the audio
-        video_stream.download(loc, filename="temp_video.mp4")
-        audio_stream.download(loc, filename="temp_audio.webm")
+        video_stream.download(download_location, filename="temp_video.mp4")
+        audio_stream.download(download_location, filename="temp_audio.webm")
 
         # Merge the audio and video
         subprocess.run([
-            'ffmpeg', '-i', os.path.join(loc, "temp_video.mp4"),
-            '-i', os.path.join(loc, "temp_audio.webm"),
-            '-c', 'copy', os.path.join(loc, f"{video_filename}.mp4")
+            'ffmpeg', '-i', os.path.join(download_location, "temp_video.mp4"),
+            '-i', os.path.join(download_location, "temp_audio.webm"),
+            '-c', 'copy', os.path.join(download_location, f"{video_filename}.mp4")
         ], check=True)
 
         # Delete the temporary files
-        os.remove(os.path.join(loc, "temp_audio.webm"))
-        os.remove(os.path.join(loc, "temp_video.mp4"))
+        os.remove(os.path.join(download_location, "temp_audio.webm"))
+        os.remove(os.path.join(download_location, "temp_video.mp4"))
 
 def on_progress(stream, chunk, bytes_remaining):
     total_size = stream.filesize
@@ -108,19 +114,23 @@ def theme():
 
 def chooseLocation():
     global loc
-    loc = tk.filedialog.askdirectory()
+    global playlist_loc
     
-    max_length = 13
-    if len(loc) > max_length:
-        display_text = loc[0:max_length] + '...'
-    else:
-        display_text = loc
-    location.configure(text=display_text)
-    location.configure(fg_color = "green")
+    loc = tk.filedialog.askdirectory()
 
     # If the user didn't choose a directory, use the current directory
     if not loc:
         loc = os.getcwd()
+    else:
+        max_length = 13
+        if len(loc) > max_length:
+            display_text = loc[0:max_length] + '...'
+        else:
+            display_text = loc
+        location.configure(text=display_text)
+        location.configure(fg_color = "green")
+
+    playlist_loc = loc
 
 def checkbox_event():
     global check_audio
