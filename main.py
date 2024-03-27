@@ -3,7 +3,7 @@ import re
 import threading
 import tkinter as tk
 import subprocess
-import pytube as pt
+from pytube import YouTube, Playlist
 import customtkinter
 
 ffmpeg_path = os.path.join(os.path.dirname(__file__), 'bin', 'ffmpeg')
@@ -21,10 +21,10 @@ def downloadVideo():
     try:
         url = link.get()
         if 'playlist' in url:
-            playlist_title = pt.Playlist(url).title
+            playlist_title = Playlist(url).title
             os.makedirs(os.path.join(loc, playlist_title))
             playlist_loc = os.path.join(loc, playlist_title)
-            for video in pt.Playlist(url).video_urls:
+            for video in Playlist(url).video_urls:
                 download_video(video, playlist_loc)
         else:
             download_video(url, loc)
@@ -39,10 +39,10 @@ def downloadVideo():
     try:
         url = link.get()
         if 'playlist' in url:
-            playlist_title = pt.Playlist(url).title
+            playlist_title = Playlist(url).title
             os.makedirs(os.path.join(loc, playlist_title))
             playlist_loc = os.path.join(loc, playlist_title)
-            for video in pt.Playlist(url).video_urls:
+            for video in Playlist(url).video_urls:
                 download_video(video, playlist_loc)
         else:
             download_video(url, loc)
@@ -58,7 +58,7 @@ def download_video(url, download_location):
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     startupinfo.wShowWindow = subprocess.SW_HIDE
 
-    yt = pt.YouTube(url, on_progress_callback=on_progress)
+    yt = YouTube(url, on_progress_callback=on_progress)
     quality_index = quality_choice.index(quality)
     for i in range(quality_index, len(quality_choice)):
         video_stream = yt.streams.filter(mime_type="video/mp4", res=quality_choice[i]).first()
