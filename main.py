@@ -1,28 +1,36 @@
-import pytube as pt
 import os
-import tkinter as tk
-import customtkinter
-import threading
-import subprocess
 import re
+import threading
+import tkinter as tk
+import subprocess
+import pytube as pt
+import customtkinter
 
 ffmpeg_path = os.path.join(os.path.dirname(__file__), 'bin', 'ffmpeg')
-
-def startDownload():
-    # Create a new thread for the download operation
-    download_thread = threading.Thread(target=downloadVideo)
-    # Start the new thread
-    download_thread.start()
-
-# Quality options
 quality_choice = ["1080p", "720p", "480p", "360p", "240p", "144p"]
-
 loc = os.getcwd()
 playlist_loc = loc
 
-def choice(event):
-    global quality
-    quality = resolution.get()
+def startDownload():
+    download_thread = threading.Thread(target=downloadVideo)
+    download_thread.start()
+
+def downloadVideo():
+    global loc
+    global playlist_loc
+    try:
+        url = link.get()
+        if 'playlist' in url:
+            playlist_title = pt.Playlist(url).title
+            os.makedirs(os.path.join(loc, playlist_title))
+            playlist_loc = os.path.join(loc, playlist_title)
+            for video in pt.Playlist(url).video_urls:
+                download_video(video, playlist_loc)
+        else:
+            download_video(url, loc)
+    except Exception as e:
+        finished.configure(text="An error occurred", text_color="red")
+        print(e)
 
 # Download the video
 def downloadVideo():
@@ -108,6 +116,10 @@ def on_progress(stream, chunk, bytes_remaining):
     else:
         progress_bar.configure(progress_color="blue")
 
+# Resolution choice
+def choice(event):
+    global quality
+    quality = resolution.get()
 
 # Light/Dark mode:
 def theme():
