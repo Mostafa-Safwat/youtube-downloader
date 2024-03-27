@@ -1,6 +1,7 @@
 import os
 import re
 import threading
+import configparser
 import tkinter as tk
 import subprocess
 from pytube import YouTube, Playlist
@@ -10,6 +11,7 @@ ffmpeg_path = os.path.join(os.path.dirname(__file__), 'bin', 'ffmpeg')
 quality_choice = ["1080p", "720p", "480p", "360p", "240p", "144p"]
 loc = os.getcwd()
 playlist_loc = loc
+config = configparser.ConfigParser()
 
 def startDownload():
     download_thread = threading.Thread(target=downloadVideo)
@@ -126,9 +128,14 @@ def theme():
     if customtkinter.get_appearance_mode() == "Light":
         customtkinter.set_appearance_mode("dark")
         mode.configure(image=dark_icon)
+        config['Settings'] = {'Theme': 'dark'}
     else:
         customtkinter.set_appearance_mode("light")
         mode.configure(image=light_icon)
+        config['Settings'] = {'Theme': 'light'}
+
+    with open('settings.ini', 'w') as configfile:
+        config.write(configfile)
 
 def chooseLocation():
     global loc
@@ -160,8 +167,29 @@ app = customtkinter.CTk()
 # Define check_audio at the start of your script
 check_audio = tk.StringVar()
 
+# Define the icons for the light/dark mode button
 dark_icon = tk.PhotoImage(file="assets/light.png")
 light_icon = tk.PhotoImage(file="assets/dark.png")
+
+# Light/Dark mode button
+mode = customtkinter.CTkButton(app, width=1, image="", text="", fg_color= "transparent", command=theme)
+mode.grid(row=1, column=0, padx=10, pady=1, sticky="e")
+
+if customtkinter.get_appearance_mode() == "Light":
+    mode.configure(image=light_icon)
+else:
+    mode.configure(image=dark_icon)
+
+# Read the theme setting from the configuration file and apply it
+config.read('settings.ini')
+if 'Settings' in config and 'Theme' in config['Settings']:
+    theme = config['Settings']['Theme']
+    if theme == 'dark':
+        customtkinter.set_appearance_mode("dark")
+        mode.configure(image=dark_icon)
+    else:
+        customtkinter.set_appearance_mode("light")
+        mode.configure(image=light_icon)
 
 # Main window settings
 app.title("YouTube Downloader")
@@ -174,12 +202,6 @@ app.iconbitmap('assets/icon.ico')
 # Title
 title = customtkinter.CTkLabel(app, text="Insert a youtube link")
 title.grid(row=1, column=0, padx=10, pady=10)
-
-# Light/Dark mode button
-mode = customtkinter.CTkButton(app, width=1, image="", text="", fg_color= "transparent", command=theme)
-mode.grid(row=1, column=0, padx=10, pady=1, sticky="e")
-
-theme()
     
 # Link input
 url_var = tk.StringVar()
