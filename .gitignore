@@ -6,4 +6,4 @@ bin/
 build
 dist
 *.spec
-Settings/
+config/

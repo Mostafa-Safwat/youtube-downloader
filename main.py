@@ -12,7 +12,7 @@ quality_choice = ["1080p", "720p", "480p", "360p", "240p", "144p"]
 loc = os.getcwd()
 playlist_loc = loc
 config = configparser.ConfigParser()
-os.makedirs('Settings', exist_ok=True)
+os.makedirs('config', exist_ok=True)
 
 def startDownload():
     download_thread = threading.Thread(target=downloadVideo)
@@ -135,7 +135,7 @@ def theme():
         mode.configure(image=light_icon)
         config['Settings'] = {'Theme': 'light'}
 
-    with open(os.path.join('Settings', 'Theme.ini'), 'w') as configfile:
+    with open(os.path.join('config', 'Theme.ini'), 'w') as configfile:
         config.write(configfile)
 
 def chooseLocation():
@@ -182,7 +182,7 @@ else:
     mode.configure(image=dark_icon)
 
 # Read the theme setting from the configuration file and apply it
-config.read(os.path.join('Settings', 'Theme.ini'))
+config.read(os.path.join('config', 'Theme.ini'))
 if 'Settings' in config and 'Theme' in config['Settings']:
     theme = config['Settings']['Theme']
     if theme == 'dark':
